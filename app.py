@@ -6,23 +6,18 @@ from urllib.parse import quote
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 from selenium import webdriver
-
-def preparar_driver():
-    driver, wait = iniciar_driver()
-    URL = driver.command_executor._url
-    SESSION_ID = driver.session_id
-    print(f'Url: {URL}; Session_id: {SESSION_ID}')
-
-    return driver, wait, URL, SESSION_ID
+from pyautogui import write
 
 
-def iniciar_automacao(window, telefone, driver_inicial, wait, url, session_id, login_is_done=bool):
+def iniciar_automacao(window, telefone, driver_inicial, wait, login_is_done=bool):
     if login_is_done is False:
         logar_whatsapp(window, driver_inicial, wait)
     if login_is_done is True:
         enviar_relatorio(driver=driver_inicial, wait=wait, telefone=telefone)
         print('Relatório enviado com sucesso!')
+        sleep(5)
         driver_inicial.quit()
+        window.write_event_value('fim_da_automacao', 'Relatório enviado com sucesso!')
 
 
 def logar_whatsapp(window, driver, wait):
@@ -42,7 +37,6 @@ def varrer_site(driver, wait):
 
     # Resultado
     resultado = wait.until(condicao_esperada.visibility_of_element_located((By.XPATH, "//div[@class='resultado-loteria']//h3[1]"))).text
-    driver.save_screenshot('site.png')
     print(resultado)
 
     # Conscurso
@@ -91,26 +85,16 @@ def formar_relatorio(driver, wait):
 
     relatorio = f'''Bom dia! Segue abaixo o relatório de hoje sobre a Mega Sena.\n
     \nResultado: {dados["Resultado"]}\n
-    Concurso: {dados["Concurso"]}\n
-    Data: {dados["Data"]}\n
-    Numeros: {dados['Numeros']}'''
+Concurso: {dados["Concurso"]}\n
+Data: {dados["Data"]}\n
+Numeros: {dados['Numeros']}'''
     
     return relatorio
 
 
 def enviar_relatorio(driver, wait, telefone):
     relatorio = formar_relatorio(driver, wait)
-    link_personalisado2 = f'''https://web.whatsapp.com/send/?phone={telefone}&text={quote(relatorio)}&type=phone_number&app_absent=0'''
-    driver.get(link_personalisado2)
-    
-    # link_personalisado = f'https://wa.me//{TELEFONE}?text={quote(relatorio)}'
-    # botao_iniciar_conversa = wait.until(condicao_esperada.element_to_be_clickable((By.XPATH, "//a[@id='action-button']")))
-    # print(botao_iniciar_conversa)
-    # link_final = botao_iniciar_conversa.get_attribute('href')
-    # print(link_final)
-    # driver.get(link_final)
-    # botao_iniciar_conversa.click()
-
-    driver.save_screenshot('site.png')
-
-driver, wait, URL, SESSION_ID = preparar_driver()
+    link_personalisado = f'''https://web.whatsapp.com/send/?phone={telefone}&text={quote(relatorio)}&type=phone_number&app_absent=0'''
+    driver.get(link_personalisado)
+    campo_conversa = wait.until(condicao_esperada.element_to_be_clickable((By.XPATH, "//div[@class='_ak1l']")))
+    campo_conversa.send_keys(Keys.ENTER)
