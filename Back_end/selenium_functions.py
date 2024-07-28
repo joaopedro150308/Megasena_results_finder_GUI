@@ -36,17 +36,17 @@ def varrer_site(driver, wait):
     driver.get("https://loterias.caixa.gov.br/Paginas/Mega-Sena.aspx")
 
     # Resultado
-    resultado = wait.until(condicao_esperada.visibility_of_element_located(
+    resultado = wait.until(condicao_esperada.presence_of_element_located(
         (By.XPATH, "//div[@class='resultado-loteria']//h3[1]"))).text
     print(resultado)
 
     # Conscurso
-    concurso = wait.until(condicao_esperada.visibility_of_element_located(
+    concurso = wait.until(condicao_esperada.presence_of_element_located(
         (By.XPATH, "//div[@class='title-bar clearfix']//h2//span"))).text.split(' ')[1]
     print(concurso)
 
     # Data
-    data = wait.until(condicao_esperada.visibility_of_element_located(
+    data = wait.until(condicao_esperada.presence_of_element_located(
         (By.XPATH, "//div[@class='title-bar clearfix']//h2//span"))).text.split(' ')[2].replace('(', '').replace(')', '')
     print(data)
 
@@ -59,12 +59,16 @@ def varrer_site(driver, wait):
         numeros.append(numero)
     print(numeros)
 
-    return resultado, concurso, data, numeros
+    # Premio atual
+    premio_acumulado = wait.until(condicao_esperada.presence_of_element_located((By.XPATH, "//div[@class='totals']/p[1]//span[2]"))).text
+    print(f'Premio acumulado: {premio_acumulado}')
+
+    return resultado, concurso, data, numeros, premio_acumulado
 
 
 def formatar_dados(driver, wait):
 
-    resultado, concurso, data, numeros = varrer_site(driver, wait)
+    resultado, concurso, data, numeros, premio_acumulado = varrer_site(driver, wait)
 
     # Formatando os números de lista para uma só string
     numeros_formatado = ''
@@ -78,7 +82,8 @@ def formatar_dados(driver, wait):
         'Resultado': resultado,
         'Concurso': concurso,
         'Data': data,
-        'Numeros': numeros_formatado
+        'Numeros': numeros_formatado,
+        'Premio_acumulado': premio_acumulado
     }
 
     return dados
@@ -91,7 +96,8 @@ def formar_relatorio(driver, wait):
     \nResultado: {dados["Resultado"]}\n
 Concurso: {dados["Concurso"]}\n
 Data: {dados["Data"]}\n
-Numeros: {dados['Numeros']}'''
+Números: {dados['Numeros']}\n
+Premio acumulado: {dados['Premio_acumulado']}'''
 
     return relatorio
 
@@ -100,6 +106,6 @@ def enviar_relatorio(driver, wait, telefone):
     relatorio = formar_relatorio(driver, wait)
     link_personalisado = f'''https://web.whatsapp.com/send/?phone={telefone}&text={quote(relatorio)}&type=phone_number&app_absent=0'''
     driver.get(link_personalisado)
-    campo_conversa = wait.until(condicao_esperada.element_to_be_clickable(
+    campo_conversa = wait.until(condicao_esperada.visibility_of_element_located(
         (By.XPATH, "//div[@class='_ak1l']")))
     campo_conversa.send_keys(Keys.ENTER)
