@@ -1,23 +1,17 @@
-from driver_function import iniciar_driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as condicao_esperada
 from time import sleep
 from urllib.parse import quote
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
-from selenium import webdriver
-from pyautogui import write
 
 
-def iniciar_automacao(window, telefone, driver_inicial, wait, login_is_done=bool):
-    if login_is_done is False:
-        logar_whatsapp(window, driver_inicial, wait)
-    if login_is_done is True:
-        enviar_relatorio(driver=driver_inicial, wait=wait, telefone=telefone)
-        print('Relatório enviado com sucesso!')
-        sleep(5)
-        driver_inicial.quit()
-        window.write_event_value('fim_da_automacao', 'Relatório enviado com sucesso!')
+def iniciar_automacao(window, telefone, driver_inicial, wait):
+    enviar_relatorio(driver=driver_inicial, wait=wait, telefone=telefone)
+    print('Relatório enviado com sucesso!')
+    sleep(5)
+    driver_inicial.quit()
+    window.write_event_value('fim_da_automacao', 'Relatório enviado com sucesso!')
 
 
 def logar_whatsapp(window, driver, wait):

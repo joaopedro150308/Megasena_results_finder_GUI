@@ -9,7 +9,6 @@ def verificar_tamanho_minimo(valor=str, tamanho_minimo=int):
 
 
 def verificar_se_os_campos_foram_preenchidos(window, values):
-    print(values)
     results = list()
     for v in values.values():
         if len(v) >= 1:
@@ -17,6 +16,7 @@ def verificar_se_os_campos_foram_preenchidos(window, values):
         else:
             results.append(False)
 
+    # Se algum dos campos não foi preenchido, informar o usuário
     if False in results:
         window['texto_aviso'].update(visible=True)
         print('Os campos não foram completamente preenchidos')
@@ -48,11 +48,18 @@ def verificar_se_sao_numeros(window, values):
     # Se algum dos valores for inválido, notificar o usuário
     if False in resultados_booleanos:
         sg.popup_ok(
-            'Por favor use apenas números.\n\nEvite caracteres como "-, +, (, )"')
+            'Por favor use apenas números.\n\nEvite caracteres como "-, +" ou "(, )"')
         return False
     else:
         return True
 
+
+def verificar_se_os_campos_estao_seguindo_as_formatacoes(window, values):
+    # -- Verificando se os campos estão preenchidos --
+    if verificar_se_os_campos_foram_preenchidos(window, values) is True:
+        # -- Verificando se os valores indicados são números --
+        if verificar_se_sao_numeros(window, values) is True:
+            return True
 
 def formatar_valores(*valores):
     caracteres_indesejadas = ('-', '+', '(', ')')

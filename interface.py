@@ -1,24 +1,24 @@
 import PySimpleGUI as sg
-from uteis import verificar_se_os_campos_foram_preenchidos, verificar_se_sao_numeros, formatar_numero_de_telefone, atualizar_disabled_do_elemento
+from uteis import verificar_se_os_campos_foram_preenchidos, verificar_se_sao_numeros, formatar_numero_de_telefone, atualizar_disabled_do_elemento, verificar_se_os_campos_estao_seguindo_as_formatacoes
 from threading import Thread
-from time import sleep
-from app import logar_whatsapp, iniciar_automacao, iniciar_driver
+from driver_function import iniciar_driver
+from selenium_functions import iniciar_automacao, logar_whatsapp
 
 
 # Tema
 sg.theme('DarkGray8')
 # Layout
 layout = [
-    [sg.Text('Insira o número que receberá a mensagem')],
-    [sg.Text('Código do país', size=(16, 1)), sg.Input(size=(3, 1), key='codigo_pais'), sg.Text(
+    [sg.Text('Defina o número que receberá a mensagem')],
+    [sg.Text('Código do país', size=(14, 1)), sg.Input(size=(3, 1), key='codigo_pais'), sg.Text(
         '<- Inválido', text_color='red', key='codigo_pais_aviso', visible=False)],
-    [sg.Text('Código de area', size=(16, 1)), sg.Input(size=(3, 1), key='codigo_area'), sg.Text(
+    [sg.Text('Código de area', size=(14, 1)), sg.Input(size=(3, 1), key='codigo_area'), sg.Text(
         '<- Inválido', text_color='red', key='codigo_area_aviso', visible=False)],
     [sg.Text('Número de telefone'), sg.Input(size=(10, 1), key='numero'), sg.Text(
         '<- Inválido', text_color='red', key='numero_aviso', visible=False)],
-    [],
-    [sg.Button('Logar', key='logar'), sg.Button('Começar', disabled=True, key='botao_comecar'), sg.Button('Sair'), sg.Text(
-        'Por favor preencha todos os campos', text_color='red', visible=False, key='texto_aviso')]
+    [sg.Text('Por favor preencha todos os campos',
+             text_color='red', visible=False, key='texto_aviso')],
+    [sg.Button('Logar', key='logar'), sg.Button('Começar', disabled=True, key='botao_comecar'), sg.Button('Definir número', key='botao_definir_numero'), sg.Button('Sair')]
 ]
 # Janela
 window = sg.Window('Resultados', layout=layout)
@@ -29,31 +29,27 @@ while True:
     if event == 'Sair' or event == sg.WIN_CLOSED:
         break
 
+    elif event == 'botao_definir_numero':
+        if verificar_se_os_campos_estao_seguindo_as_formatacoes(window, values) is True:
+            # -- Confirmar se o número digitado é o desejado --
+            if sg.popup_yes_no(f'Você realmente deseja enviar o resultado para este número?\n\n{formatar_numero_de_telefone(values)}') == 'Yes':
+                # Se for, dispara um evento que aciona a automacao e define o número alvo
+                TELEFONE = f'{values["codigo_pais"]}{values["codigo_area"]}{values["numero"]}'
+
+# -- Eventos relacionados ao login da conta whatsapp --
     # --- Se clicar em "Logar" ---
     elif event == 'logar':
-        # -- Verificando se os campos estão preenchidos --
-        if verificar_se_os_campos_foram_preenchidos(window, values) is True:
-            # -- Verificando se os valores indicados são números --
-            if verificar_se_sao_numeros(window, values) is True:
-                # -- Confirmar se o número digitado é o desejado --
-                if sg.popup_yes_no(f'Você realmente deseja enviar o resultado para este número?\n\n{formatar_numero_de_telefone(values)}') == 'Yes':
-                    # Se for, dispara um evento que aciona a automacao
-                    window.write_event_value(
-                        'iniciando_login', 'Iniciando login')
-
-    # -- Eventos relacionados ao login na conta Whatsapp --
-    elif event == 'iniciando_login':
         sg.popup_no_titlebar('A tela de login está iniciando. Por favor aguarde a PRÓXIMA MENSAGEM.',
                              auto_close=True, auto_close_duration=5, non_blocking=False)
         driver, wait = iniciar_driver()
-        TELEFONE = f'{values["codigo_pais"]}{values["codigo_area"]}{values["numero"]}'
-        thread_logar = Thread(target=iniciar_automacao, args=(
-            window, TELEFONE, driver, wait, False), daemon=True)
+        thread_logar = Thread(target=logar_whatsapp, args=(
+            window, driver, wait), daemon=True)
         thread_logar.start()
         atualizar_disabled_do_elemento(window, 'logar', True)
 
     elif event == 'login_completo':
         thread_logar.join()
+        driver.minimize_window()
         atualizar_disabled_do_elemento(window, 'logar', False)
         sg.popup_no_titlebar('Login bem suscedido. Botão "Começar" liberado!',
                              non_blocking=True, auto_close=True, auto_close_duration=5)
@@ -72,13 +68,16 @@ while True:
 
     # -- Eventos relacionados ao inicio do real processo de automação --
     elif event == 'botao_comecar':
-        TELEFONE = f'{values["codigo_pais"]}{values["codigo_area"]}{values["numero"]}'
-        thread_automacao = Thread(target=iniciar_automacao, args=(
-            window, TELEFONE, driver, wait, True), daemon=True)
-        sg.popup_no_titlebar('Iniciando automação!\n\nPor favor aguarde e aproveite ;)',
-                             auto_close=True, auto_close_duration=5)
-        thread_automacao.start()
-        atualizar_disabled_do_elemento(window, 'botao_comecar', True)
+        try:
+            thread_automacao = Thread(target=iniciar_automacao, args=(
+                window, TELEFONE, driver, wait), daemon=True)
+            sg.popup_no_titlebar('Iniciando automação!\n\nPor favor aguarde e aproveite ;)',
+                                 auto_close=True, auto_close_duration=5)
+            thread_automacao.start()
+            atualizar_disabled_do_elemento(window, 'botao_comecar', True)
+        except NameError:
+            sg.popup_ok(
+                'Oops, parece que você ainda NÃO DEFINIU UM NÚMERO. faça-o para poder começar.')
 
     elif event == 'fim_da_automacao':
         thread_automacao.join()
