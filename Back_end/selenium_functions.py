@@ -6,12 +6,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 
 
-def iniciar_automacao(window, telefone, driver_inicial, wait):
-    driver_inicial.maximize_window()
-    enviar_relatorio(driver=driver_inicial, wait=wait, telefone=telefone)
+def iniciar_automacao(window, telefone, driver, wait):
+    driver.set_window_size(driver.get_window_size().get('width'), driver.get_window_size().get('height'))
+    enviar_relatorio(driver=driver, wait=wait, telefone=telefone)
     print('Relatório enviado com sucesso!')
     sleep(5)
-    driver_inicial.quit()
+    driver.minimize_window()
     window.write_event_value(
         'fim_da_automacao', 'Relatório enviado com sucesso!')
 

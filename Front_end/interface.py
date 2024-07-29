@@ -4,6 +4,7 @@ from threading import Thread
 from Back_end.driver_function import iniciar_driver
 from Back_end.selenium_functions import iniciar_automacao, logar_whatsapp
 
+
 def iniciar_interface():
     # Tema
     sg.theme('DarkGray8')
@@ -17,9 +18,9 @@ def iniciar_interface():
         [sg.Text('Número de telefone'), sg.Input(size=(10, 1), key='numero'), sg.Text(
             '<- Inválido', text_color='red', key='numero_aviso', visible=False)],
         [sg.Text('Por favor preencha todos os campos',
-                text_color='red', visible=False, key='texto_aviso')],
+                 text_color='red', visible=False, key='texto_aviso')],
         [sg.Button('Logar', key='logar'), sg.Button('Começar', disabled=True, key='botao_comecar'),
-        sg.Button('Definir número', key='botao_definir_numero'), sg.Button('Sair')]
+         sg.Button('Definir número', key='botao_definir_numero'), sg.Button('Sair')]
     ]
     # Janela
     window = sg.Window('Resultados', layout=layout)
@@ -31,17 +32,19 @@ def iniciar_interface():
             break
 
         elif event == 'botao_definir_numero':
+            window['botao_definir_numero'].update('Definir número', button_color=sg.theme_button_color())
             if verificar_se_os_campos_estao_seguindo_as_formatacoes(window, values) is True:
                 # -- Confirmar se o número digitado é o desejado --
                 if sg.popup_yes_no(f'Você realmente deseja enviar o resultado para este número?\n\n{formatar_numero_de_telefone(values)}') == 'Yes':
                     # Se for, dispara um evento que aciona a automacao e define o número alvo
                     TELEFONE = f'{values["codigo_pais"]}{values["codigo_area"]}{values["numero"]}'
+                    window['botao_definir_numero'].update('Definido', button_color=f'green on  {sg.theme_button_color_background()}')
 
     # -- Eventos relacionados ao login da conta whatsapp --
         # --- Se clicar em "Logar" ---
         elif event == 'logar':
             sg.popup_no_titlebar('A tela de login está iniciando. Por favor aguarde a PRÓXIMA MENSAGEM.',
-                                auto_close=True, auto_close_duration=5, non_blocking=False)
+                                 auto_close=True, auto_close_duration=5, non_blocking=False)
             driver, wait = iniciar_driver()
             thread_logar = Thread(target=logar_whatsapp, args=(
                 window, driver, wait), daemon=True)
@@ -53,7 +56,7 @@ def iniciar_interface():
             driver.minimize_window()
             atualizar_disabled_do_elemento(window, 'logar', False)
             sg.popup_no_titlebar('Login bem suscedido. Botão "Começar" liberado!',
-                                non_blocking=True, auto_close=True, auto_close_duration=5)
+                                 non_blocking=True, auto_close=True, auto_close_duration=5)
             atualizar_disabled_do_elemento(window, 'botao_comecar', False)
             print('Login efetuado')
 
@@ -73,7 +76,7 @@ def iniciar_interface():
                 thread_automacao = Thread(target=iniciar_automacao, args=(
                     window, TELEFONE, driver, wait), daemon=True)
                 sg.popup_no_titlebar('Iniciando automação!\n\nPor favor aguarde e aproveite ;)',
-                                    auto_close=True, auto_close_duration=5)
+                                     auto_close=True, auto_close_duration=5)
                 thread_automacao.start()
                 atualizar_disabled_do_elemento(window, 'botao_comecar', True)
             except NameError:
@@ -83,4 +86,11 @@ def iniciar_interface():
         elif event == 'fim_da_automacao':
             thread_automacao.join()
             atualizar_disabled_do_elemento(window, 'botao_comecar', False)
-            sg.popup_ok('Relatório enviado com sucesso!')
+            sg.popup_ok('Relatório enviado com sucesso!',
+                        auto_close=True, auto_close_duration=3, non_blocking=True)
+
+    # Finalizer driver após o fechamento da janela
+    try:
+        driver.quit()
+    except UnboundLocalError:
+        print('Não houve inicialização do driver. Finalizando aplicação.')

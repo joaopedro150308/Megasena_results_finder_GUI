@@ -11,7 +11,7 @@ def verificar_tamanho_minimo(valor=str, tamanho_minimo=int):
 def verificar_se_os_campos_foram_preenchidos(window, values):
     results = list()
     for v in values.values():
-        if len(v) >= 1:
+        if len(v) > 1:
             results.append(True)
         else:
             results.append(False)
@@ -83,10 +83,9 @@ def formatar_numero_de_telefone(values):
     codigo_pais = valores_formatados[0]
     codigo_area = valores_formatados[1]
     numero = valores_formatados[2]
-
-    numero_formatado = '-'.join(
-        numero.partition(numero[4])).replace('-', '', 1)
+    numero_formatado = f'{numero[:5] + "-" + numero[5:]}'
     formatacao_final = f'+{codigo_pais} ({codigo_area}) {numero_formatado}'
+
     return formatacao_final
 
 

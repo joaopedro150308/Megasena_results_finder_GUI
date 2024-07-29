@@ -10,9 +10,7 @@ The program counts with some functions like:
 
 - Automatcally sending the report to the given whatsapp number
 
-- Automatcally re-runing the report making and sending process every draw day
-
-- A GUI to make the things better
+- Has a GUI to make the things better
 
 # Technical information
 The program use this technologies in his code:
@@ -29,6 +27,6 @@ The program use this technologies in his code:
 
     - The instruction popups
 
-The program relates some of the Selenium and PySimpleGUI stuffs to provide a good (in my opinion) user experience.
+The program also relates some of the Selenium and PySimpleGUI stuffs to provide a good (in my opinion) user experience.
 
 For example the use of the selenium "Wait strategy" resource to send a popup or making any other action only in the right time.
