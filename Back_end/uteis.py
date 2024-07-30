@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from datetime import date
 
 
 def verificar_tamanho_minimo(valor=str, tamanho_minimo=int):
@@ -92,3 +93,11 @@ def formatar_numero_de_telefone(values):
 def atualizar_disabled_do_elemento(window, element_key, disabled_to_be=bool):
     window[f'{element_key}'].update(disabled=disabled_to_be)
     window.refresh()
+
+
+def conseguir_data_atual():
+    data_de_hoje = date.today()
+    data_formatada = data_de_hoje.strftime("%d/%m/%Y")
+    print(data_formatada)
+
+    return data_formatada

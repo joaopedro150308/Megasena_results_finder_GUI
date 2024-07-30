@@ -24,6 +24,7 @@ def iniciar_interface():
     ]
     # Janela
     window = sg.Window('Resultados', layout=layout)
+    is_the_first_run = True
     # Tratamento de eventos
     while True:
         event, values = window.read()
@@ -32,13 +33,15 @@ def iniciar_interface():
             break
 
         elif event == 'botao_definir_numero':
-            window['botao_definir_numero'].update('Definir número', button_color=sg.theme_button_color())
+            window['botao_definir_numero'].update(
+                'Definir número', button_color=sg.theme_button_color())
             if verificar_se_os_campos_estao_seguindo_as_formatacoes(window, values) is True:
                 # -- Confirmar se o número digitado é o desejado --
                 if sg.popup_yes_no(f'Você realmente deseja enviar o resultado para este número?\n\n{formatar_numero_de_telefone(values)}') == 'Yes':
                     # Se for, dispara um evento que aciona a automacao e define o número alvo
                     TELEFONE = f'{values["codigo_pais"]}{values["codigo_area"]}{values["numero"]}'
-                    window['botao_definir_numero'].update('Definido', button_color=f'green on  {sg.theme_button_color_background()}')
+                    window['botao_definir_numero'].update(
+                        'Definido', button_color=f'green on  {sg.theme_button_color_background()}')
 
     # -- Eventos relacionados ao login da conta whatsapp --
         # --- Se clicar em "Logar" ---
@@ -74,7 +77,7 @@ def iniciar_interface():
         elif event == 'botao_comecar':
             try:
                 thread_automacao = Thread(target=iniciar_automacao, args=(
-                    window, TELEFONE, driver, wait), daemon=True)
+                    window, TELEFONE, driver, wait, is_the_first_run), daemon=True)
                 sg.popup_no_titlebar('Iniciando automação!\n\nPor favor aguarde e aproveite ;)',
                                      auto_close=True, auto_close_duration=5)
                 thread_automacao.start()
@@ -84,6 +87,7 @@ def iniciar_interface():
                     'Oops, parece que você ainda NÃO DEFINIU UM NÚMERO. faça-o para poder começar.')
 
         elif event == 'fim_da_automacao':
+            is_the_first_run = False
             thread_automacao.join()
             atualizar_disabled_do_elemento(window, 'botao_comecar', False)
             sg.popup_ok('Relatório enviado com sucesso!',

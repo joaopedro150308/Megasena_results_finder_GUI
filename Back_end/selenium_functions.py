@@ -4,16 +4,17 @@ from time import sleep
 from urllib.parse import quote
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
+from Back_end.uteis import conseguir_data_atual
 
 
-def iniciar_automacao(window, telefone, driver, wait):
-    driver.set_window_size(driver.get_window_size().get('width'), driver.get_window_size().get('height'))
-    enviar_relatorio(driver=driver, wait=wait, telefone=telefone)
+def iniciar_automacao(window, telefone, driver, wait, is_the_first_run):
+    driver.set_window_size(driver.get_window_size().get(
+        'width'), driver.get_window_size().get('height'))
+    enviar_relatorio(driver=driver, wait=wait, telefone=telefone,is_the_first_run=is_the_first_run)
     print('Relatório enviado com sucesso!')
     sleep(5)
     driver.minimize_window()
-    window.write_event_value(
-        'fim_da_automacao', 'Relatório enviado com sucesso!')
+    window.write_event_value('fim_da_automacao', 'Relatório enviado com sucesso!')
 
 
 def logar_whatsapp(window, driver, wait):
@@ -41,14 +42,9 @@ def varrer_site(driver, wait):
     print(resultado)
 
     # Conscurso
-    concurso = wait.until(condicao_esperada.presence_of_element_located(
-        (By.XPATH, "//div[@class='title-bar clearfix']//h2//span"))).text.split(' ')[1]
-    print(concurso)
-
-    # Data
-    data = wait.until(condicao_esperada.presence_of_element_located(
-        (By.XPATH, "//div[@class='title-bar clearfix']//h2//span"))).text.split(' ')[2].replace('(', '').replace(')', '')
-    print(data)
+    concurso_e_data = wait.until(condicao_esperada.presence_of_element_located(
+        (By.XPATH, "//div[@class='title-bar clearfix']//h2//span"))).text
+    print(concurso_e_data)
 
     # Numeros
     elementos = wait.until(condicao_esperada.presence_of_all_elements_located(
@@ -60,16 +56,21 @@ def varrer_site(driver, wait):
     print(numeros)
 
     # Premio atual
-    premio_acumulado = wait.until(condicao_esperada.presence_of_element_located((By.XPATH, "//div[@class='totals']/p[1]//span[2]"))).text
+    premio_acumulado = wait.until(condicao_esperada.presence_of_element_located(
+        (By.XPATH, "//div[@class='totals']/p[1]//span[2]"))).text
     print(f'Premio acumulado: {premio_acumulado}')
 
-    return resultado, concurso, data, numeros, premio_acumulado
+    return resultado, concurso_e_data, numeros, premio_acumulado
 
 
 def formatar_dados(driver, wait):
 
-    resultado, concurso, data, numeros, premio_acumulado = varrer_site(driver, wait)
+    resultado, concurso_e_data, numeros, premio_acumulado = varrer_site(driver, wait)
+    # Formatando concurso
+    concurso = concurso_e_data.split(' ')[1]
 
+    # Formatando data
+    data = concurso_e_data.split(' ')[2].replace('(', '').replace(')', '')
     # Formatando os números de lista para uma só string
     numeros_formatado = ''
     for i, numero in enumerate(numeros):
@@ -102,10 +103,16 @@ Premio acumulado: {dados['Premio_acumulado']}'''
     return relatorio
 
 
-def enviar_relatorio(driver, wait, telefone):
-    relatorio = formar_relatorio(driver, wait)
+def enviar_relatorio(driver, wait, telefone, is_the_first_run):
+    if is_the_first_run is True:
+        relatorio = formar_relatorio(driver, wait)
+    else:
+        print(f'{relatorio}\n{"="*20}')
+        dia_de_hoje = conseguir_data_atual()
     link_personalisado = f'''https://web.whatsapp.com/send/?phone={telefone}&text={quote(relatorio)}&type=phone_number&app_absent=0'''
     driver.get(link_personalisado)
     campo_conversa = wait.until(condicao_esperada.visibility_of_element_located(
         (By.XPATH, "//div[@class='_ak1l']")))
     campo_conversa.send_keys(Keys.ENTER)
+
+    print(f'Relatorio final: {relatorio}')
