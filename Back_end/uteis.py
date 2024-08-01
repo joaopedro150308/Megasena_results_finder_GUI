@@ -95,9 +95,30 @@ def atualizar_disabled_do_elemento(window, element_key, disabled_to_be=bool):
     window.refresh()
 
 
+# ---- Funções relacionadas a data ----
 def conseguir_data_atual():
     data_de_hoje = date.today()
+    dia_de_hoje = date.today().weekday()
     data_formatada = data_de_hoje.strftime("%d/%m/%Y")
     print(data_formatada)
+    print(dia_de_hoje)
 
-    return data_formatada
+    return data_formatada, dia_de_hoje
+
+
+# ---- Funções relacionadas ao relatorio ----
+def verificar_data_de_emissao_do_ultimo_relatorio():
+    data_atual, dia_de_hoje = conseguir_data_atual()
+
+    with open('relatorio.txt', 'r') as arquivo:
+        # Verificando se o dia de hoje é terça, quinta ou sexta
+        if dia_de_hoje in (1, 3, 4):
+            if data_atual in arquivo:
+                # Se o relatorio estiver atualizado retorna True
+                return True
+            else:
+                # Se não estiver, retorna False
+                return False
+        else:
+            # Se não for terça, quinta ou sexta
+            return False

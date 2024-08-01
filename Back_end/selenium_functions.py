@@ -4,15 +4,15 @@ from time import sleep
 from urllib.parse import quote
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
-from Back_end.uteis import conseguir_data_atual
+from Back_end.uteis import verificar_data_de_emissao_do_ultimo_relatorio
 
 
 def iniciar_automacao(window, telefone, driver, wait, is_the_first_run):
     driver.set_window_size(driver.get_window_size().get(
         'width'), driver.get_window_size().get('height'))
     enviar_relatorio(driver=driver, wait=wait, telefone=telefone,is_the_first_run=is_the_first_run)
+    sleep(1)
     print('Relatório enviado com sucesso!')
-    sleep(5)
     driver.minimize_window()
     window.write_event_value('fim_da_automacao', 'Relatório enviado com sucesso!')
 
@@ -40,12 +40,16 @@ def varrer_site(driver, wait):
     resultado = wait.until(condicao_esperada.presence_of_element_located(
         (By.XPATH, "//div[@class='resultado-loteria']//h3[1]"))).text
     print(resultado)
+    if resultado == '':
+        resultado = 'Houveram ganhadores!'
+        print(resultado)
+    sleep(1)
 
     # Conscurso
     concurso_e_data = wait.until(condicao_esperada.presence_of_element_located(
         (By.XPATH, "//div[@class='title-bar clearfix']//h2//span"))).text
     print(concurso_e_data)
-
+    sleep(1)
     # Numeros
     elementos = wait.until(condicao_esperada.presence_of_all_elements_located(
         (By.XPATH, "//div[@class='resultado-loteria']//ul//li")))
@@ -56,16 +60,16 @@ def varrer_site(driver, wait):
     print(numeros)
 
     # Premio atual
-    premio_acumulado = wait.until(condicao_esperada.presence_of_element_located(
-        (By.XPATH, "//div[@class='totals']/p[1]//span[2]"))).text
-    print(f'Premio acumulado: {premio_acumulado}')
+    estimativa_proximo_concurso = wait.until(condicao_esperada.presence_of_element_located(
+        (By.XPATH, "//div[@class='next-prize clearfix']//p[2]"))).text
+    print(f'Premio estimado p/ proximo concurso: {estimativa_proximo_concurso}')
 
-    return resultado, concurso_e_data, numeros, premio_acumulado
+    return resultado, concurso_e_data, numeros, estimativa_proximo_concurso
 
 
 def formatar_dados(driver, wait):
 
-    resultado, concurso_e_data, numeros, premio_acumulado = varrer_site(driver, wait)
+    resultado, concurso_e_data, numeros, estimativa_proximo_concurso = varrer_site(driver, wait)
     # Formatando concurso
     concurso = concurso_e_data.split(' ')[1]
 
@@ -84,7 +88,7 @@ def formatar_dados(driver, wait):
         'Concurso': concurso,
         'Data': data,
         'Numeros': numeros_formatado,
-        'Premio_acumulado': premio_acumulado
+        'estimativa_proximo_concurso': estimativa_proximo_concurso
     }
 
     return dados
@@ -98,21 +102,23 @@ def formar_relatorio(driver, wait):
 Concurso: {dados["Concurso"]}\n
 Data: {dados["Data"]}\n
 Números: {dados['Numeros']}\n
-Premio acumulado: {dados['Premio_acumulado']}'''
+Premio estimado p/ próximo concurso: {dados['estimativa_proximo_concurso']}'''
 
-    return relatorio
+    with open('relatorio.txt', 'w', encoding='utf-8') as arquivo:
+        arquivo.write(relatorio)
 
 
 def enviar_relatorio(driver, wait, telefone, is_the_first_run):
-    if is_the_first_run is True:
-        relatorio = formar_relatorio(driver, wait)
-    else:
-        print(f'{relatorio}\n{"="*20}')
-        dia_de_hoje = conseguir_data_atual()
+    if verificar_data_de_emissao_do_ultimo_relatorio() is False:
+        formar_relatorio(driver, wait)
+
+    with open('relatorio.txt', 'r', encoding='utf-8') as arquivo:
+        relatorio = ''
+        for linha in arquivo:
+            relatorio += linha
+        print(f'O relatorio é: {relatorio}')
     link_personalisado = f'''https://web.whatsapp.com/send/?phone={telefone}&text={quote(relatorio)}&type=phone_number&app_absent=0'''
     driver.get(link_personalisado)
     campo_conversa = wait.until(condicao_esperada.visibility_of_element_located(
         (By.XPATH, "//div[@class='_ak1l']")))
     campo_conversa.send_keys(Keys.ENTER)
-
-    print(f'Relatorio final: {relatorio}')
