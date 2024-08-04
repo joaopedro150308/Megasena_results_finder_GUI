@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 from Back_end.uteis import formatar_numero_de_telefone, atualizar_disabled_do_elemento, verificar_se_os_campos_estao_seguindo_as_formatacoes
 from threading import Thread
 from Back_end.driver_function import iniciar_driver
-from Back_end.selenium_functions import iniciar_automacao, logar_whatsapp
+from Back_end.selenium_functions import iniciar_automacao, logar_whatsapp, encerrar_sessao_whatsapp
 
 
 def iniciar_interface():
@@ -30,6 +30,13 @@ def iniciar_interface():
         event, values = window.read()
 
         if event == 'Sair' or event == sg.WIN_CLOSED:
+            # pylint: disable=used-before-assignment
+            try:
+                if login_completo is True:
+                    sg.popup_ok('Iniciando processo de logout do wahtsapp, a janela se encerrará em breve',
+                                auto_close=True, auto_close_duration=5)
+            except UnboundLocalError:
+                print('Não houve login no wahtsapp')
             break
 
         elif event == 'botao_definir_numero':
@@ -53,8 +60,10 @@ def iniciar_interface():
                 window, driver, wait), daemon=True)
             thread_logar.start()
             atualizar_disabled_do_elemento(window, 'logar', True)
+            atualizar_disabled_do_elemento(window, 'botao_comecar', True)
 
         elif event == 'login_completo':
+            login_completo = True
             thread_logar.join()
             driver.minimize_window()
             atualizar_disabled_do_elemento(window, 'logar', False)
@@ -95,6 +104,7 @@ def iniciar_interface():
 
     # Finalizer driver após o fechamento da janela
     try:
-        driver.quit()
+        return driver, wait
     except UnboundLocalError:
-        print('Não houve inicialização do driver. Finalizando aplicação.')
+        print('O driver não foi iniciado')
+        return None, None

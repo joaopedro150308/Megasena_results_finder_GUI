@@ -110,15 +110,21 @@ def conseguir_data_atual():
 def verificar_data_de_emissao_do_ultimo_relatorio():
     data_atual, dia_de_hoje = conseguir_data_atual()
 
-    with open('relatorio.txt', 'r') as arquivo:
-        # Verificando se o dia de hoje é terça, quinta ou sexta
-        if dia_de_hoje in (1, 3, 4):
-            if data_atual in arquivo:
-                # Se o relatorio estiver atualizado retorna True
-                return True
+    try:
+        with open('relatorio.txt', 'r') as arquivo:
+            # Verificando se o dia de hoje é terça, quinta ou sexta
+            if dia_de_hoje in (1, 3, 5):
+                if data_atual in arquivo:
+                    # Se o relatorio estiver atualizado retorna True
+                    print('O sorteio foi emitido hoje! Por tanto, \033[32está matualizado\033[m')
+                    return True
+                else:
+                    # Se não estiver, retorna False
+                    print('Hoje é dia de sorteio, porém o atual \033[31mnão está atualizado\033[m')
+                    return False
             else:
-                # Se não estiver, retorna False
+                # Se não for terça, quinta ou sábado
                 return False
-        else:
-            # Se não for terça, quinta ou sexta
-            return False
+    except FileNotFoundError:
+        print('Não há relatórios prévios salvos')
+        return None

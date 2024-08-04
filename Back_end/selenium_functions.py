@@ -3,6 +3,7 @@ from selenium.webdriver.support import expected_conditions as condicao_esperada
 from time import sleep
 from urllib.parse import quote
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException
 from Back_end.uteis import verificar_data_de_emissao_do_ultimo_relatorio
 
@@ -109,7 +110,7 @@ Premio estimado p/ próximo concurso: {dados['estimativa_proximo_concurso']}'''
 
 
 def enviar_relatorio(driver, wait, telefone, is_the_first_run):
-    if verificar_data_de_emissao_do_ultimo_relatorio() is False:
+    if verificar_data_de_emissao_do_ultimo_relatorio() in (False, None):
         formar_relatorio(driver, wait)
 
     with open('relatorio.txt', 'r', encoding='utf-8') as arquivo:
@@ -122,3 +123,35 @@ def enviar_relatorio(driver, wait, telefone, is_the_first_run):
     campo_conversa = wait.until(condicao_esperada.visibility_of_element_located(
         (By.XPATH, "//div[@class='_ak1l']")))
     campo_conversa.send_keys(Keys.ENTER)
+
+
+def encerrar_sessao_whatsapp(driver, wait):
+    # Abrir a janela
+    driver.set_window_size(800, 600)
+    # Navegar até a página principal do wahtsapp
+    driver.get('https://web.whatsapp.com')
+    # Localizando o botão de configuração
+    botao_configuracao = wait.until(condicao_esperada.element_to_be_clickable((By.XPATH, "//div[@aria-label='Configurações']")))
+    print('Botão configurações localizado')
+    botao_configuracao.click()
+    # Localizando os botões presentes na aba de condigurações
+    botoes_das_configuracoes = wait.until(condicao_esperada.visibility_of_any_elements_located((By.XPATH, "//div[@class='x78zum5 xdt5ytf x1iyjqo2 x2lah0s xdl72j9 x1odjw0f xh8yej3']/div//button")))
+    print('Botões localizados')
+    # Localizando campo pesquisar
+    campo_pesquisar_configuracao = wait.until(condicao_esperada.element_to_be_clickable((By.XPATH, "//div[@title='Pesquisar configurações']")))
+    print('Campo pesquisar configurações localizado')
+    # Efetuando ações até clicar no botão sair
+    chain = ActionChains(driver)
+    chain.send_keys(Keys.DOWN)
+    sleep(1)
+    chain.send_keys(Keys.UP)
+    sleep(1)
+    chain.send_keys(Keys.ENTER)
+    chain.perform()
+    botao_desconectar = wait.until(condicao_esperada.element_to_be_clickable((By.XPATH, "//div[@class='x1n2onr6 x1iyjqo2 xs83m0k x1l7klhg x1mzt3pk xeaf4i8']//div[3]/div//button[2]")))
+    chain.send_keys(Keys.TAB)
+    sleep(1)
+    chain.send_keys(Keys.TAB)
+    sleep(1)
+    chain.send_keys(Keys.ENTER)
+    chain.perform()
